@@ -71,7 +71,7 @@ export default function Home() {
             title: !updateData ? "" : updateData.data.title
           }}
           onSubmit={(values, actions) => {
-            if(updateData){
+            if(isUpdating){
               console.log(values);
               setIsLoading(true)
               fetch(`/.netlify/functions/update-todo`,{
