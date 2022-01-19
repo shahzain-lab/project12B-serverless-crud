@@ -22,12 +22,12 @@ export default function Home() {
           setmessages(data)
         })
     })()
-  }, [data, isloading])
+  }, [data, isloading, isDeleting, isUpdating])
 
   const handleDelete = id => {
     console.log(JSON.stringify(id))
     setIsDeleting(true)
-    fetch("/.netlify/functions/todos-delete", {
+    fetch("/.netlify/functions/delete-todo", {
       method: "delete",
       body: JSON.stringify(id),
     })
@@ -36,13 +36,14 @@ export default function Home() {
         console.log(data.message)
         setIsDeleting(false)
         setmessages(undefined)
-        // setIsUpdating(false)
+        setIsUpdating(false)
       })
   }
   const handleUpdate = id => {
     const msgUpdate = messages.find(msg => msg.ref["@ref"].id === id)
     setIsUpdating(true)
     setUpdateData(msgUpdate)
+    console.log(msgUpdate)
   }
 
   return (
@@ -66,11 +67,27 @@ export default function Home() {
           })
           }
           initialValues={{
-            id:"" ,
-            title: ""
+            id: !updateData ? "" : updateData.ref['@ref'].id ,
+            title: !updateData ? "" : updateData.data.title
           }}
           onSubmit={(values, actions) => {
-            console.log(values);
+            if(updateData){
+              console.log(values);
+              setIsLoading(true)
+              fetch(`/.netlify/functions/update-todo`,{
+                method: 'put',
+                body: JSON.stringify(values)
+              })
+              .then(res => res.json())
+              .then( data => {
+                setData(data)
+                setIsLoading(false)
+                setIsUpdating(false)
+                setmessages(undefined)
+              })
+            }
+            else{
+              console.log(values);
               setIsLoading(true)
               fetch(`/.netlify/functions/create-todo`, {
                 method: "post",
@@ -81,7 +98,7 @@ export default function Home() {
                   setData(data)
                   setIsLoading(false)
                   setmessages(undefined)
-                  //resetForm
+            //resetForm
                   actions.resetForm({
                     values: {
                       id: "",
@@ -89,6 +106,7 @@ export default function Home() {
                     },
                   })
                 })
+            }
               
           }}
         >
@@ -124,12 +142,13 @@ export default function Home() {
                     type="submit"
                     disabled={isloading ? true : false}
                     style={{ color: "white", padding: '10px 2rem',marginLeft: '10px' }}
-                    className="btn btn-large"
+                    size="large"
                   >
                     {
-                       isloading
-                      ? "Adding..."
-                      : "Add"}
+                       isUpdating ? 
+                       isloading ? 'Updating...' :
+                        'Update' : isloading ?
+                         'Adding...' : 'Add'}
                   </Button>
                 </Box>
               </Box>
@@ -150,9 +169,9 @@ export default function Home() {
                     <Typography variant={'h6'} color="#707070">
                       {msg.data.title}
                     </Typography>
-                    <Box p={1}></Box>
+                    <Box>
                     <Button
-                      style={{ margin: "0 4px 0 0px " }}
+                      style={{ margin: "2px 10px " }}
                       variant="contained"
                       color={"primary"}
                       size="small"
@@ -169,7 +188,7 @@ export default function Home() {
                       style={{ color: "white" }}
                     >
                       {isDeleting && msg.ref["@ref"].id ? "Deleting..." : "Delete"}
-                    </Button>
+                    </Button></Box>
                 </div>
               ))
               }
